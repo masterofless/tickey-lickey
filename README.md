@@ -55,5 +55,4 @@ You should see 3 elasticsearch pods, 2 services and 1 deployment:
 
 ## Build the Ticket Redemption Go Application
 
-    cd go_server
-    nerdctl build . -t tickey-lickey-redemption:latest  --namespace k8s.io
+    nerdctl build -t tickey-lickey-redeemer:latest --namespace tickey-lickey go_server

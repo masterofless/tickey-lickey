@@ -5,18 +5,19 @@ COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 COPY *.go ./
+
 RUN go test
-RUN go build -o /runtime
+RUN go build -o redeemer
 
-FROM alpine:latest
+FROM almalinux:latest
 
-RUN addgroup notroot
-RUN adduser -G notroot -D notroot
+RUN groupadd notroot
+RUN useradd notroot -g notroot
+
+WORKDIR /app
+COPY --from=build /app/redeemer /app/redeemer
 USER notroot:notroot
-
-WORKDIR /
-COPY --from=build /runtime /runtime
 
 EXPOSE 8080
 
-CMD [ "/runtime" ]
+CMD [ "/app/redeemer" ]
