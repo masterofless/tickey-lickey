@@ -20,7 +20,7 @@ func main() {
 	server.Use(middleware.Recover())
 
 	server.GET("/", healthcheck)
-	server.GET("/redeem", redeem)
+	server.GET("/redeem/:token", redeem)
 
 	server.Logger.Fatal(server.Start(":8080")) // Start server
 }
@@ -49,7 +49,6 @@ func getESClient() *elasticsearch.Client {
 	if err != nil {
 		log.Fatalf("reading es password from file %s: %s", filename, err)
 	}
-	log.Printf("ES url: %s, user: %s, password: %s", url, user, espass)
 	es, err := elasticsearch.NewClient(
 		elasticsearch.Config{
 			Addresses: []string{url},
@@ -74,11 +73,11 @@ func getESClient() *elasticsearch.Client {
 	return es
 }
 
-func readWristBand(httpContext echo.Context) *WristBand {
+func getQuery(token string) *bytes.Buffer {
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"match": map[string]interface{}{
-				"token": "youwonaprize",
+				"token": token,
 			},
 		},
 	}
@@ -86,47 +85,48 @@ func readWristBand(httpContext echo.Context) *WristBand {
 	if err := json.NewEncoder(&queryBuf).Encode(query); err != nil {
 		log.Fatalf("Error encoding query: %s", err)
 	}
+	return &queryBuf
+}
+
+func getSearchResult(queryBuf *bytes.Buffer) map[string]interface{} {
 	es := getESClient()
 	searchRes, err := es.Search(
 		es.Search.WithContext(context.Background()),
 		es.Search.WithIndex("tickets"),
-		es.Search.WithBody(&queryBuf),
+		es.Search.WithBody(queryBuf),
 		es.Search.WithTrackTotalHits(true),
 		es.Search.WithPretty(),
 	)
 	if err != nil {
 		log.Fatalf("Error getting response: %s", err)
 	}
-	defer searchRes.Body.Close()
-
 	if searchRes.IsError() {
-		var e map[string]interface{}
-		if err := json.NewDecoder(searchRes.Body).Decode(&e); err != nil {
+		var errBody map[string]interface{}
+		if err := json.NewDecoder(searchRes.Body).Decode(&errBody); err != nil {
 			log.Fatalf("Error parsing the response body: %s", err)
 		} else {
 			// Print the response status and error information.
 			log.Fatalf("[%s] %s: %s",
 				searchRes.Status(),
-				e["error"].(map[string]interface{})["type"],
-				e["error"].(map[string]interface{})["reason"],
+				errBody["error"].(map[string]interface{})["type"],
+				errBody["error"].(map[string]interface{})["reason"],
 			)
 		}
 	}
+	defer searchRes.Body.Close()
+
 	var results map[string]interface{}
 	if err := json.NewDecoder(searchRes.Body).Decode(&results); err != nil {
 		log.Fatalf("Error parsing the response body: %s", err)
 	}
-	log.Printf(
-		"[%s] %d hits; took: %dms",
-		searchRes.Status(),
-		int(results["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64)),
-		int(results["took"].(float64)),
-	)
-	for _, hit := range results["hits"].(map[string]interface{})["hits"].([]interface{}) {
-		log.Printf(" * ID=%s, %s", hit.(map[string]interface{})["_id"], hit.(map[string]interface{})["_source"])
-	}
+	return results
+}
+
+func readWristBand(httpContext echo.Context) *WristBand {
+	results := getSearchResult(getQuery(httpContext.Param("token")))
+	// for _, hit := range results["hits"].(map[string]interface{})["hits"].([]interface{}) {
+	// 	log.Printf(" * ID=%s, %s", hit.(map[string]interface{})["_id"], hit.(map[string]interface{})["_source"])
+	// }
 	firstHit := results["hits"].(map[string]interface{})["hits"].([]interface{})[0].(map[string]interface{})["_source"].(map[string]interface{})
-	log.Printf("%s", firstHit)
-	wb := WristBand{Token: firstHit["token"].(string), Used: firstHit["used"].(string), URL: firstHit["url"].(string)}
-	return &wb
+	return &WristBand{Token: firstHit["token"].(string), Used: firstHit["used"].(string), URL: firstHit["url"].(string)}
 }
