@@ -3,6 +3,9 @@
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
+elasticsearch:
+  hostURL: "https://elasticsearch-master:9200"
+  username: elastic
 
 image:
   repository: tickey-lickey-redeemer

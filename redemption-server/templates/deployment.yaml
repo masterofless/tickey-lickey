@@ -37,16 +37,34 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: ES_HOST_URL
+              value: "{{ .Values.elasticsearch.hostURL }}"
+            - name: ES_USERNAME
+              value: "{{ .Values.elasticsearch.username }}"
+            - name: ES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-master-credentials
+                  key: password
+          volumeMounts:
+            - mountPath: /mnt/secrets-store
+              name: secrets-volume
+              readOnly: true
+      volumes:
+        - name: secrets-volume
+          secret:
+            secretName: elasticsearch-master-credentials
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

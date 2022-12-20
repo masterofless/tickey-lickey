@@ -56,3 +56,23 @@ You should see 3 elasticsearch pods, 2 services and 1 deployment:
 ## Build the Ticket Redemption Go Application
 
     nerdctl build -t tickey-lickey-redeemer:latest --namespace tickey-lickey go_server
+
+## Deploy the Redeemer Server Chart and Health Check Service
+
+    helm install -n tickey-lickey redeemer ./redemption-server
+    kct port-forward service/redeemer 8080:8080
+    http localhost:8080 # Hello?
+
+## Load Ticket Data
+
+    http --verify=no POST https://localhost:9200/tickets/_bulk -a elastic:$ESPASS -j < redemption-server/ticket-data.json
+
+Query the tickets that are there:
+
+    cat <<EOF | http --verify=no 'https://localhost:9200/_search?pretty' -a elastic:$ESPASS -j
+    {
+        "query": {
+            "match_all": {}
+        }
+    }
+    EOF
