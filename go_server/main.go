@@ -29,6 +29,10 @@ func healthcheck(httpContext echo.Context) error {
 	return httpContext.String(http.StatusOK, "I'm okay; how are you?")
 }
 
+type Response struct {
+	Answer string
+}
+
 func redeem(httpContext echo.Context) error {
 	wristband := readWristBand(httpContext)
 	json, _ := json.Marshal(wristband)
@@ -123,10 +127,18 @@ func getSearchResult(queryBuf *bytes.Buffer) map[string]interface{} {
 }
 
 func readWristBand(httpContext echo.Context) *WristBand {
-	results := getSearchResult(getQuery(httpContext.Param("token")))
+	token := httpContext.Param("token")
+	results := getSearchResult(getQuery(token))
 	// for _, hit := range results["hits"].(map[string]interface{})["hits"].([]interface{}) {
 	// 	log.Printf(" * ID=%s, %s", hit.(map[string]interface{})["_id"], hit.(map[string]interface{})["_source"])
 	// }
+	hits := int(results["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
+	if hits == 0 {
+		return &WristBand{Token: token, URL: "Sorry, that token was not found"}
+	}
 	firstHit := results["hits"].(map[string]interface{})["hits"].([]interface{})[0].(map[string]interface{})["_source"].(map[string]interface{})
-	return &WristBand{Token: firstHit["token"].(string), Used: firstHit["used"].(string), URL: firstHit["url"].(string)}
+	if firstHit["used"].(string) == "false" {
+		return &WristBand{Token: firstHit["token"].(string), Used: firstHit["used"].(string), URL: firstHit["url"].(string)}
+	}
+	return &WristBand{Token: token, URL: "Sorry, that token was already used"}
 }
