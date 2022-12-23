@@ -6,10 +6,12 @@ replicaCount: 1
 elasticsearch:
   hostURL: "https://elasticsearch-master:9200"
   username: elastic
+  passwdFilename: "/mnt/es-secrets-store/password"
 rabbitmq:
   host: "hello-world.rabbitmq-test.svc.cluster.local"
   port: 5672
-  queue_name: "afctest1"
+  queueName: "afctest1"
+  passwdFilename: "/mnt/rabbitmq-secrets-store/password"
 
 image:
   repository: tickey-lickey-redeemer

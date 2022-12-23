@@ -37,14 +37,14 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
-          # livenessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: http
-          # readinessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: http
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
@@ -52,6 +52,8 @@ spec:
               value: "{{ .Values.elasticsearch.hostURL }}"
             - name: ES_USERNAME
               value: "{{ .Values.elasticsearch.username }}"
+            - name: ES_PASSWD_FILENAME
+              value: "{{ .Values.elasticsearch.passwdFilename }}"
             - name: ES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -61,8 +63,10 @@ spec:
               value: "{{ .Values.rabbitmq.host }}"
             - name: RABBIT_PORT
               value: "{{ .Values.rabbitmq.port }}"
+            - name: RABBIT_PASSWD_FILENAME
+              value: "{{ .Values.rabbitmq.passwdFilename }}"
             - name: REDEEMED_QUEUE_NAME
-              value: "{{ .Values.rabbitmq.queue_name }}"
+              value: "{{ .Values.rabbitmq.queueName }}"
             - name: RABBIT_USERNAME
               valueFrom:
                 secretKeyRef:

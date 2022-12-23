@@ -42,8 +42,9 @@ type WristBand struct {
 }
 
 func redeem(httpContext echo.Context) error {
-	wristband := readWristBand(httpContext)
-	enqueueRedemption(wristband)
+	wristband := readWristBand(httpContext) // read from elasticsearch
+	enqueueRedemption(wristband)            // write to rabbitmq
+	// respond
 	json, _ := json.Marshal(wristband)
 	return httpContext.String(http.StatusOK, string(json))
 }
@@ -51,10 +52,10 @@ func redeem(httpContext echo.Context) error {
 func getESClient() *elasticsearch.Client {
 	url := os.Getenv("ES_HOST_URL")
 	user := os.Getenv("ES_USERNAME")
-	filename := "/mnt/es-secrets-store/password"
-	espass, err := os.ReadFile(filename)
+	esPasswdFilename := os.Getenv("ES_PASSWD_FILENAME")
+	espass, err := os.ReadFile(esPasswdFilename)
 	if err != nil {
-		log.Fatalf("reading es password from file %s: %s", filename, err)
+		log.Fatalf("reading es password from file %s: %s", esPasswdFilename, err)
 	}
 	es, err := elasticsearch.NewClient(
 		elasticsearch.Config{
@@ -150,10 +151,10 @@ func enqueueRedemption(wristband *WristBand) {
 	var rabbit_host = os.Getenv("RABBIT_HOST")
 	var rabbit_port = os.Getenv("RABBIT_PORT")
 	var rabbit_user = os.Getenv("RABBIT_USERNAME")
-	filename := "/mnt/rabbitmq-secrets-store/password"
-	rabbit_password, err := os.ReadFile(filename)
+	var rabbitmqPasswdFilename = os.Getenv("RABBIT_PASSWD_FILENAME")
+	rabbit_password, err := os.ReadFile(rabbitmqPasswdFilename)
 	if err != nil {
-		log.Fatalf("reading rabbitmq password from file %s: %s", filename, err)
+		log.Fatalf("reading rabbitmq password from file %s: %s", rabbitmqPasswdFilename, err)
 	}
 
 	var address = "amqp://" + rabbit_user + ":" + string(rabbit_password) + "@" + rabbit_host + ":" + rabbit_port + "/"
