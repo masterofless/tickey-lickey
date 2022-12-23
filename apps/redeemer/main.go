@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/streadway/amqp"
 )
 
 func main() {
@@ -33,16 +35,17 @@ type Response struct {
 	Answer string
 }
 
-func redeem(httpContext echo.Context) error {
-	wristband := readWristBand(httpContext)
-	json, _ := json.Marshal(wristband)
-	return httpContext.String(http.StatusOK, string(json))
-}
-
 type WristBand struct {
 	Token string
 	URL   string
 	Used  string
+}
+
+func redeem(httpContext echo.Context) error {
+	wristband := readWristBand(httpContext)
+	enqueueRedemption(wristband)
+	json, _ := json.Marshal(wristband)
+	return httpContext.String(http.StatusOK, string(json))
 }
 
 func getESClient() *elasticsearch.Client {
@@ -141,4 +144,47 @@ func readWristBand(httpContext echo.Context) *WristBand {
 		return &WristBand{Token: firstHit["token"].(string), Used: firstHit["used"].(string), URL: firstHit["url"].(string)}
 	}
 	return &WristBand{Token: token, URL: "Sorry, that token was already used"}
+}
+
+func enqueueRedemption(wristband *WristBand) {
+	var rabbit_host = os.Getenv("RABBIT_HOST")
+	var rabbit_port = os.Getenv("RABBIT_PORT")
+	var rabbit_user = os.Getenv("RABBIT_USERNAME")
+	var rabbit_password = os.Getenv("RABBIT_PASSWORD")
+
+	conn, err := amqp.Dial("amqp://" + rabbit_user + ":" + rabbit_password + "@" + rabbit_host + ":" + rabbit_port + "/")
+	if err != nil {
+		log.Fatalf("%s: %s", "Failed to connect to RabbitMQ", err)
+	}
+	defer conn.Close()
+	ch, err := conn.Channel()
+	if err != nil {
+		log.Fatalf("%s: %s", "Failed to open a channel", err)
+	}
+	defer ch.Close()
+	q, err := ch.QueueDeclare(
+		"publisher", // name
+		true,        // durable
+		false,       // delete when unused
+		false,       // exclusive
+		false,       // no-wait
+		nil,         // arguments
+	)
+	if err != nil {
+		log.Fatalf("%s: %s", "Failed to declare a queue", err)
+	}
+	message := fmt.Sprintf("Wristband token %s used", wristband.Token)
+	err = ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(message),
+		})
+	if err != nil {
+		log.Fatalf("%s: %s", "Failed to publish a message", err)
+	}
+	fmt.Println("publish success!")
 }

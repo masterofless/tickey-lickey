@@ -37,7 +37,7 @@ Ensure you have a storage class defined called `local-path` that the k8s statefu
 Within the project directory:
 
     kubectl create namespace tickey-lickey
-    helm install elasticsearch elastic/elasticsearch -n tickey-lickey -f values.yaml
+    helm install elasticsearch elastic/elasticsearch -n tickey-lickey -f elasticsearch-values.yaml
     alias kct='kubectl -n tickey-lickey' # make things easier
 
 Test cluster health using Helm test.
@@ -58,7 +58,7 @@ You should see 3 elasticsearch pods, 2 services and 1 deployment:
 
 In order for Rancher k8s to use the images you build, you must build them with nerdctl (assuming you're using containerd?) and put them in the k8s.io namespace:
 
-    nerdctl build --namespace k8s.io -t tickey-lickey-redeemer:latest go_server
+    nerdctl build --namespace k8s.io -t tickey-lickey-redeemer:latest ./apps/redeemer
 
 ## Deploy the Redeemer Server Chart and Health Check Service
 
