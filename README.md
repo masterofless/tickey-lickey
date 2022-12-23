@@ -81,3 +81,7 @@ Query the tickets that are there:
 Now you can try to redeem tickets:
 
     http://localhost:8080/redeem/youtoowonaprize
+
+I did this kind of stuff a lot
+
+    helm upgrade -n tickey-lickey --set-string elasticsearch.password=$(kubectl get secrets --namespace=tickey-lickey elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d) --set-string rabbitmq.host=hello-world.rabbitmq-test.svc.cluster.local --set-string rabbitmq.username==$(kct get secret rabbitmq-credentials -o jsonpath='{.data.username}' | base64 --decode) redeemer ./redemption-server

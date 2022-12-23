@@ -57,14 +57,36 @@ spec:
                 secretKeyRef:
                   name: elasticsearch-master-credentials
                   key: password
+            - name: RABBIT_HOST
+              value: "{{ .Values.rabbitmq.host }}"
+            - name: RABBIT_PORT
+              value: "{{ .Values.rabbitmq.port }}"
+            - name: REDEEMED_QUEUE_NAME
+              value: "{{ .Values.rabbitmq.queue_name }}"
+            - name: RABBIT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: username
+            - name: RABBIT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: password
           volumeMounts:
-            - mountPath: /mnt/secrets-store
-              name: secrets-volume
+            - mountPath: /mnt/es-secrets-store
+              name: es-secrets-volume
+              readOnly: true
+            - mountPath: /mnt/rabbitmq-secrets-store
+              name: rabbitmq-secrets-volume
               readOnly: true
       volumes:
-        - name: secrets-volume
+        - name: es-secrets-volume
           secret:
             secretName: elasticsearch-master-credentials
+        - name: rabbitmq-secrets-volume
+          secret:
+            secretName: rabbitmq-credentials
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

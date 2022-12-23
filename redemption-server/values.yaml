@@ -6,6 +6,10 @@ replicaCount: 1
 elasticsearch:
   hostURL: "https://elasticsearch-master:9200"
   username: elastic
+rabbitmq:
+  host: "hello-world.rabbitmq-test.svc.cluster.local"
+  port: 5672
+  queue_name: "afctest1"
 
 image:
   repository: tickey-lickey-redeemer

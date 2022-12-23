@@ -49,9 +49,9 @@ func redeem(httpContext echo.Context) error {
 }
 
 func getESClient() *elasticsearch.Client {
-	filename := "/mnt/secrets-store/password"
 	url := os.Getenv("ES_HOST_URL")
 	user := os.Getenv("ES_USERNAME")
+	filename := "/mnt/es-secrets-store/password"
 	espass, err := os.ReadFile(filename)
 	if err != nil {
 		log.Fatalf("reading es password from file %s: %s", filename, err)
@@ -150,11 +150,16 @@ func enqueueRedemption(wristband *WristBand) {
 	var rabbit_host = os.Getenv("RABBIT_HOST")
 	var rabbit_port = os.Getenv("RABBIT_PORT")
 	var rabbit_user = os.Getenv("RABBIT_USERNAME")
-	var rabbit_password = os.Getenv("RABBIT_PASSWORD")
-
-	conn, err := amqp.Dial("amqp://" + rabbit_user + ":" + rabbit_password + "@" + rabbit_host + ":" + rabbit_port + "/")
+	filename := "/mnt/rabbitmq-secrets-store/password"
+	rabbit_password, err := os.ReadFile(filename)
 	if err != nil {
-		log.Fatalf("%s: %s", "Failed to connect to RabbitMQ", err)
+		log.Fatalf("reading rabbitmq password from file %s: %s", filename, err)
+	}
+
+	var address = "amqp://" + rabbit_user + ":" + string(rabbit_password) + "@" + rabbit_host + ":" + rabbit_port + "/"
+	conn, err := amqp.Dial(address)
+	if err != nil {
+		log.Fatalf("%s: %s %s", "Failed to connect to RabbitMQ", address, err)
 	}
 	defer conn.Close()
 	ch, err := conn.Channel()
@@ -163,12 +168,12 @@ func enqueueRedemption(wristband *WristBand) {
 	}
 	defer ch.Close()
 	q, err := ch.QueueDeclare(
-		"publisher", // name
-		true,        // durable
-		false,       // delete when unused
-		false,       // exclusive
-		false,       // no-wait
-		nil,         // arguments
+		os.Getenv("REDEEMED_QUEUE_NAME"), // name
+		true,                             // durable
+		false,                            // delete when unused
+		false,                            // exclusive
+		false,                            // no-wait
+		nil,                              // arguments
 	)
 	if err != nil {
 		log.Fatalf("%s: %s", "Failed to declare a queue", err)
@@ -186,5 +191,5 @@ func enqueueRedemption(wristband *WristBand) {
 	if err != nil {
 		log.Fatalf("%s: %s", "Failed to publish a message", err)
 	}
-	fmt.Println("publish success!")
+	log.Printf("publish message success %s!", message)
 }
