@@ -3,15 +3,17 @@ module tickey-lickey
 go 1.19
 
 require (
-	github.com/elastic/go-elasticsearch/v8 v8.5.0
 	github.com/labstack/echo/v4 v4.9.1
 	github.com/streadway/amqp v1.0.0
 	github.com/stretchr/testify v1.8.1
+	github.com/masterofless/eslib v0.0.0
+	github.com/masterofless/rmqlib v0.0.0
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.0.0-20211216131617-bbee439d559c // indirect
+	github.com/elastic/go-elasticsearch/v8 v8.5.0 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.11 // indirect
@@ -26,3 +28,6 @@ require (
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/masterofless/eslib => ../eslib
+replace github.com/masterofless/rmqlib => ../rmqlib

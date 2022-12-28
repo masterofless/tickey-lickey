@@ -1,18 +1,13 @@
-package main
+package rmqlib
 
 import (
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/streadway/amqp"
 )
 
-func main() {
-	consume()
-}
-
-func consume() {
+func EnqueueMessage(message []byte) {
 	var rabbit_host = os.Getenv("RABBIT_HOST")
 	var rabbit_port = os.Getenv("RABBIT_PORT")
 	var rabbit_user = os.Getenv("RABBIT_USERNAME")
@@ -44,36 +39,17 @@ func consume() {
 	if err != nil {
 		log.Fatalf("%s: %s", "Failed to declare a queue", err)
 	}
-
-	msgs, err := ch.Consume(
-		q.Name, // queue
-		"",     // consumer
-		false,  // auto-ack
-		false,  // exclusive
-		false,  // no-local
-		false,  // no-wait
-		nil,    // args
-	)
+	err = ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(message),
+		})
 	if err != nil {
-		log.Fatalf("%s: %s", "Failed to register consumer", err)
+		log.Fatalf("%s: %s", "Failed to publish a message", err)
 	}
-
-	forever := make(chan bool)
-	go func() {
-		for d := range msgs {
-			log.Printf("The Handler Received a message: %s!!!", d.Body)
-			err := d.Ack(false)
-			if err != nil {
-				log.Printf("%s: %s", "Failed to ack queue message", err)
-			}
-			updateSwag(d.Body)
-		}
-	}()
-	log.Printf("Running...")
-	fmt.Println("Running...")
-	<-forever
-}
-
-func updateSwag(body []byte) {
-	log.Printf("Updating body %s", body)
+	log.Printf("publish message success %s!", message)
 }
