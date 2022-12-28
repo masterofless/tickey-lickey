@@ -1,10 +1,12 @@
 FROM golang:1.16 AS build
 
 WORKDIR /app/eslib
-ADD http://github.com/masterofless/tickey-lickey/apps/eslib/ ./
+ADD https://github.com/masterofless/tickey-lickey/tree/main/apps/eslib/eslib.go ./
+ADD https://github.com/masterofless/tickey-lickey/tree/main/apps/eslib/go.mod ./
 
 WORKDIR /app/rmqlib
-ADD http://github.com/masterofless/tickey-lickey/apps/rmqlib/ ./
+ADD https://github.com/masterofless/tickey-lickey/tree/main/apps/rmqlib/rmqlib.go ./
+ADD https://github.com/masterofless/tickey-lickey/tree/main/apps/rmqlib/go.mod ./
 
 WORKDIR /app/redeemer
 COPY go.* ./

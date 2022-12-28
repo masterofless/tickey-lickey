@@ -1,4 +1,4 @@
-module github.com/masterofless/rqmlib
+module github.com/masterofless/tickey-lickey/rqmlib
 
 go 1.19
 

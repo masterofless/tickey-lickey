@@ -1,4 +1,4 @@
-module github.com/masterofless/eslib
+module github.com/masterofless/tickey-lickey/eslib
 
 go 1.19
 
