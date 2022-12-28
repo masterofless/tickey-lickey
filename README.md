@@ -1,3 +1,7 @@
+# Tickey-Lickey the Ticket Redeemer
+
+This was for a DevSecOps Dojo exercise, and to learn some things for O'Reilly Auto Parts.
+
 ## Problem Statement
 
 Deploy a system that can get users download links for the albums they purchase.
@@ -37,7 +41,7 @@ Ensure you have a storage class defined called `local-path` that the k8s statefu
 Within the project directory:
 
     kubectl create namespace tickey-lickey
-    helm install elasticsearch elastic/elasticsearch -n tickey-lickey -f elasticsearch-values.yaml
+    helm install elasticsearch elastic/elasticsearch -n tickey-lickey -f elasticsearch_values.yaml
     alias kct='kubectl -n tickey-lickey' # make things easier
 
 Test cluster health using Helm test.
@@ -50,9 +54,7 @@ Port-forward 9200 and hit the elastic endpoint:
     ESPASS=$(kct get secrets elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d)
     http -a elastic:$ESPASS --verify=no https://localhost:9200/ # brew install httpie
 
-You should see 3 elasticsearch pods, 2 services and 1 deployment:
-
-    kct get all
+With `kct get all` you should see 3 elasticsearch pods, 2 services and 1 deployment.
 
 ## Build the Ticket Redemption Go Application
 
@@ -78,10 +80,10 @@ Query the tickets that are there:
     }
     EOF
 
-Now you can try to redeem tickets:
+## Now you can redeem tickets!
 
     http://localhost:8080/redeem/youtoowonaprize
 
-I did this kind of stuff a lot
+## Notes
 
     helm upgrade -n tickey-lickey --set-string elasticsearch.password=$(kubectl get secrets --namespace=tickey-lickey elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d) --set-string rabbitmq.host=hello-world.rabbitmq-test.svc.cluster.local --set-string rabbitmq.username==$(kct get secret rabbitmq-credentials -o jsonpath='{.data.username}' | base64 --decode) redeemer ./redemption-server
