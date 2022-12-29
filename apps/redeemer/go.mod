@@ -29,6 +29,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/masterofless/tickey-lickey/eslib => ./eslib
-
-replace github.com/masterofless/tickey-lickey/rmqlib => ./rmqlib
+// replace github.com/masterofless/tickey-lickey/eslib => ./eslib
+// replace github.com/masterofless/tickey-lickey/rmqlib => ./rmqlib
